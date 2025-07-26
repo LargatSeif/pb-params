@@ -35,7 +35,7 @@
     "typescript",
     "ts"
   ],
-  "author": "seifeddine largat",
+  "author": "Seifeddine Largat",
   "license": "MIT",
   "devDependencies": {
     "@changesets/cli": "^2.29.5",
@@ -50,10 +50,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/seifeddine/pb-params.git"
+    "url": "git+https://github.com/LargatSeif/pb-params.git"
   },
   "bugs": {
-    "url": "https://github.com/seifeddine/pb-params/issues"
+    "url": "https://github.com/LargatSeif/pb-params/issues"
   },
-  "homepage": "https://github.com/seifeddine/pb-params#readme"
+  "homepage": "https://github.com/LargatSeif/pb-params#readme"
 }
