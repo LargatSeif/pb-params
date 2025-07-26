@@ -291,6 +291,7 @@ The `expand()` and `expandIf()` methods have been removed as expansion is now au
 This project was inspired by:
 - [@emresandikci/pocketbase-query](https://github.com/emresandikci/pocketbase-query) - Initial inspiration for type-safe PocketBase queries
 - [sergio9929/pb-query](https://github.com/sergio9929/pb-query) - Excellent filtering API design
+- [@patmood/pocketbase-typegen](https://github.com/patmood/pocketbase-typegen) - All the Typescript types.
 
 ## Comparison with pb-query
 
