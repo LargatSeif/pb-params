@@ -286,6 +286,12 @@ pbParams<User>()
 
 The `expand()` and `expandIf()` methods have been removed as expansion is now automatically inferred from field paths.
 
+## Credits & Inspiration
+
+This project was inspired by:
+- [@emresandikci/pocketbase-query](https://github.com/emresandikci/pocketbase-query) - Initial inspiration for type-safe PocketBase queries
+- [sergio9929/pb-query](https://github.com/sergio9929/pb-query) - Excellent filtering API design
+
 ## Comparison with pb-query
 
 `pb-params` builds upon the success of [pb-query](https://github.com/sergio9929/pb-query) but provides:
