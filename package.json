@@ -1,6 +1,6 @@
 {
   "name": "pb-params",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "type": "module",
   "description": "Type-safe PocketBase query parameters builder with pocketbase-typegen integration",
   "main": "dist/index.js",

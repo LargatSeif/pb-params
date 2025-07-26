@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1
+
+### Patch Changes
+
+- 15dc7c0: Add credits to README
+
 ## 0.2.0
 
 ### Minor Changes
