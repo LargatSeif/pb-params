@@ -97,3 +97,9 @@ logs
 # Lock files (keep pnpm-lock.yaml if using pnpm)
 package-lock.json
 yarn.lock
+
+
+# Assistants
+.cursorrules
+.cursor/
+CLAUDE.md
