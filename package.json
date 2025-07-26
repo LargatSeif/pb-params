@@ -1,0 +1,63 @@
+{
+  "name": "pb-params",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Type-safe PocketBase query parameters builder with pocketbase-typegen integration",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "lint": "eslint src tests --ext .ts,.tsx --fix",
+    "lint:check": "eslint src tests --ext .ts,.tsx",
+    "test": "vitest run --typecheck",
+    "test:watch": "vitest --typecheck",
+    "test:ui": "vitest --ui --typecheck",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "prepare": "pnpm run build",
+    "check:all": "pnpm run test && pnpm build && pnpm run lint:check && pnpm run typecheck",
+    "dry:run": "npm pack --dry-run"
+  },
+  "keywords": [
+    "pocketbase",
+    "pocketbase-js",
+    "pocketbase-ts",
+    "pocketbase-typegen",
+    "query",
+    "builder",
+    "querybuilder",
+    "parameters",
+    "typescript",
+    "ts"
+  ],
+  "author": "seifeddine largat",
+  "license": "MIT",
+  "peerDependencies": {
+    "pocketbase": "^0.21.0"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.29.5",
+    "@eslint/js": "^9.0.0",
+    "@types/node": "^22.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0",
+    "pocketbase": "^0.21.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/seifeddine/pb-params.git"
+  },
+  "bugs": {
+    "url": "https://github.com/seifeddine/pb-params/issues"
+  },
+  "homepage": "https://github.com/seifeddine/pb-params#readme"
+}
