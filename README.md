@@ -1,11 +1,11 @@
-# pb-params ( WIP )
+# pb-params
 
 [![npm version](https://badge.fury.io/js/pb-params.svg)](https://badge.fury.io/js/pb-params)
 [![npm downloads](https://img.shields.io/npm/dm/pb-params.svg)](https://www.npmjs.com/package/pb-params)
 [![TypeScript](https://img.shields.io/badge/TypeScript-ready-blue.svg)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Type-safe PocketBase query parameters builder with pocketbase-typegen integration.
+Type-safe PocketBase query parameters builder with pocketbase-typegen integration and auto-expand functionality.
 
 ## Overview
 
@@ -17,7 +17,8 @@ Type-safe PocketBase query parameters builder with pocketbase-typegen integratio
 - 🎯 **Type-Safe**: Full TypeScript support with collection-specific typing
 - 🔗 **Typegen Integration**: Works seamlessly with pocketbase-typegen output
 - 🏗️ **Fluent API**: Chain methods for intuitive query building
-- 📦 **Zero Dependencies**: Lightweight with only pocketbase as peer dependency
+- ⚡ **Auto-Expand**: Automatically generates expand from field paths - no redundancy!
+- 📦 **Zero Dependencies**: Lightweight with no runtime dependencies
 - 🎨 **Conditional Building**: Apply parameters based on runtime conditions
 
 ## Installation
@@ -26,24 +27,21 @@ Install pb-params with your preferred package manager:
 
 ```bash
 # npm
-npm install pb-params pocketbase
+npm install pb-params
 
 # pnpm
-pnpm add pb-params pocketbase
+pnpm add pb-params
 
 # yarn
-yarn add pb-params pocketbase
+yarn add pb-params
 
 # bun
-bun add pb-params pocketbase
+bun add pb-params
 ```
-
-> **Note**: `pocketbase` is a peer dependency. Make sure to install it alongside pb-params.
 
 ## Requirements
 
 - **TypeScript**: 5.0+
-- **PocketBase**: 0.21.0+
 - **Node.js**: 18+
 
 ## Getting Started
@@ -65,18 +63,18 @@ import type { UsersRecord } from './pocketbase-types' // Generated types
 
 const pb = new PocketBase('http://127.0.0.1:8090')
 
-// Build comprehensive query parameters
+// Build comprehensive query parameters with auto-expand
 const params = pbParams<UsersRecord>()
   .filter(q => q
     .equal('verified', true)
     .and()
     .like('name', 'John%')
   )
-  .fields(['id', 'name', 'email', 'created'])
-  .expand(['profile', 'organization'])
+  .fields(['id', 'name', 'email', 'created', 'expand.profile.avatar', 'expand.organization.name'])
   .sort(['-created', 'name'])
   .page(1, 20)
   .build()
+  // Auto-generates: { expand: "profile,organization" }
 
 // Use with PocketBase SDK
 const records = await pb.collection('users').getList(1, 20, params)
@@ -92,12 +90,16 @@ interface User {
   name: string
   email: string
   verified: boolean
+  expand?: {
+    profile?: { avatar: string }
+  }
 }
 
 const params = pbParams<User>()
   .filter(q => q.equal('verified', true))
-  .fields(['id', 'name', 'email'])
+  .fields(['id', 'name', 'email', 'expand.profile.avatar'])
   .build()
+  // Auto-generates: { expand: "profile" }
 ```
 
 ## API Reference
@@ -137,30 +139,37 @@ pbParams<UsersRecord>()
 - `between(key, from, to)` - Range queries
 - `isNull(key)`, `isNotNull(key)` - Null checks
 
-### Field Selection
+### Field Selection & Auto-Expand
 
-Select specific fields to return:
+Select specific fields and automatically expand relations:
 
 ```typescript
 pbParams<UsersRecord>()
-  .fields(['id', 'name', 'email', 'profile.avatar'])
+  .fields([
+    'id', 
+    'name', 
+    'email', 
+    'expand.profile.avatar',      // Auto-expands: profile
+    'expand.profile.bio',
+    'expand.organization.name'    // Auto-expands: organization
+  ])
+  // Results in: { 
+  //   fields: "id,name,email,expand.profile.avatar,expand.profile.bio,expand.organization.name",
+  //   expand: "profile,organization" 
+  // }
 ```
 
-### Relation Expansion
+### Nested Relations
 
-Expand related records:
+Handle deeply nested relations with ease:
 
 ```typescript
-// Simple expansion
 pbParams<UsersRecord>()
-  .expand(['profile', 'organization'])
-
-// Nested expansion with field selection
-pbParams<UsersRecord>()
-  .expand({
-    profile: ['id', 'avatar', 'bio'],
-    organization: ['name', 'slug']
-  })
+  .fields([
+    'id',
+    'expand.profile.expand.preferences.theme',  // Auto-expands: profile,profile.preferences
+    'expand.profile.expand.preferences.notifications'
+  ])
 ```
 
 ### Sorting
@@ -191,7 +200,7 @@ const sortByDate = filters.sortBy === 'date'
 
 pbParams<UsersRecord>()
   .filterIf(filters.verified !== undefined, q => q.equal('verified', filters.verified))
-  .expandIf(includeProfile, ['profile'])
+  .fieldsIf(includeProfile, ['id', 'name', 'expand.profile.avatar'])  // Auto-expands profile when included
   .sortIf(sortByDate, ['-created'])
 ```
 
@@ -256,6 +265,27 @@ const result = pbParams<UsersRecord>()
 // result.raw contains the raw filter query and values
 ```
 
+## Migration from v0.1.0
+
+Version 0.1.1 introduces auto-expand functionality that eliminates API redundancy:
+
+**Before (v0.1.0):**
+```typescript
+pbParams<User>()
+  .fields(['id', 'expand.profile.bio', 'expand.organization.name'])
+  .expand(['profile', 'organization'])  // Redundant!
+  .build()
+```
+
+**After (v0.1.1):**
+```typescript
+pbParams<User>()
+  .fields(['id', 'expand.profile.bio', 'expand.organization.name'])
+  .build()  // Auto-generates expand: "profile,organization"
+```
+
+The `expand()` and `expandIf()` methods have been removed as expansion is now automatically inferred from field paths.
+
 ## Comparison with pb-query
 
 `pb-params` builds upon the success of [pb-query](https://github.com/sergio9929/pb-query) but provides:
@@ -263,6 +293,7 @@ const result = pbParams<UsersRecord>()
 - **Broader Scope**: Complete parameter coverage vs. filtering only
 - **Collection-Specific Types**: Built for pocketbase-typegen integration from day one
 - **Unified API**: Single library for all PocketBase query needs
+- **Auto-Expand**: Eliminates redundancy with automatic expand generation
 - **Enhanced Features**: Conditional building, nested expansion, type inference
 
 ## License

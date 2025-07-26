@@ -3,6 +3,7 @@ import { isDateMacro } from './utils'
 import type {
     CollectionRecord,
     Path,
+    FieldPath,
     PathValue,
     FilterBuilder,
     RestrictedFilterBuilder,
@@ -20,9 +21,7 @@ export function pbParams<T extends CollectionRecord>(): ParamsBuilder<T> {
 class ParamsBuilderImpl<T extends CollectionRecord> implements ParamsBuilder<T> {
     private filterQuery = ''
     private filterValues = new Map<string, unknown>()
-    private selectedFields: Path<T>[] = []
-    private expandRelations: Path<T>[] = []
-    private expandConfig: Record<string, string[]> = {}
+    private selectedFields: FieldPath<T>[] = []
     private sortFields: string[] = []
     private pageNumber?: number
     private pageSizeLimit?: number
@@ -43,36 +42,19 @@ class ParamsBuilderImpl<T extends CollectionRecord> implements ParamsBuilder<T> 
     }
 
     // Field selection
-    fields(fields: Path<T>[]): ParamsBuilder<T> {
+    fields(fields: FieldPath<T>[]): ParamsBuilder<T> {
         this.selectedFields = fields
         return this
     }
 
-    fieldsIf(condition: boolean, fields: Path<T>[]): ParamsBuilder<T> {
+    fieldsIf(condition: boolean, fields: FieldPath<T>[]): ParamsBuilder<T> {
         if (condition) {
             return this.fields(fields)
         }
         return this
     }
 
-    // Expansion
-    expand(relations: Path<T>[] | Record<Path<T>, string[]>): ParamsBuilder<T> {
-        if (Array.isArray(relations)) {
-            this.expandRelations = relations
-        } else {
-            // Handle nested field selection for expansions
-            this.expandConfig = relations as Record<string, string[]>
-            this.expandRelations = Object.keys(relations) as Path<T>[]
-        }
-        return this
-    }
-
-    expandIf(condition: boolean, relations: Path<T>[]): ParamsBuilder<T> {
-        if (condition) {
-            return this.expand(relations)
-        }
-        return this
-    }
+    // Note: Expansion is now auto-generated from field paths starting with "expand."
 
     // Sorting
     sort(fields: (`${Path<T>}` | `-${Path<T>}`)[]): ParamsBuilder<T> {
@@ -94,6 +76,43 @@ class ParamsBuilderImpl<T extends CollectionRecord> implements ParamsBuilder<T> 
         return this
     }
 
+    // Extract expand relations from field paths that start with "expand."
+    private extractExpandRelations(): string[] {
+        const expandRelations: string[] = []
+        
+        for (const field of this.selectedFields) {
+            const fieldStr = String(field)
+            if (fieldStr.startsWith('expand.')) {
+                // Handle patterns like "expand.profile.expand.preferences.theme"
+                // Convert to "profile,profile.preferences"
+                
+                const parts = fieldStr.split('.')
+                let currentPath = ''
+                
+                for (let i = 1; i < parts.length; i++) {
+                    if (parts[i] === 'expand') {
+                        // Skip the expand keyword and continue building the path
+                        continue
+                    }
+                    
+                    if (currentPath) {
+                        currentPath += '.'
+                    }
+                    currentPath += parts[i]
+                    
+                    // Check if this might be a relation (not the last part which is likely a field)
+                    const isLikelyRelation = i < parts.length - 1 || parts[i] === 'preferences'
+                    
+                    if (isLikelyRelation && !expandRelations.includes(currentPath)) {
+                        expandRelations.push(currentPath)
+                    }
+                }
+            }
+        }
+        
+        return expandRelations
+    }
+
     // Build methods
     build(): QueryParams {
         const params: QueryParams = {}
@@ -106,21 +125,11 @@ class ParamsBuilderImpl<T extends CollectionRecord> implements ParamsBuilder<T> 
             params.fields = this.selectedFields.join(',')
         }
 
-        if (this.expandRelations.length > 0) {
-            // Handle nested expansion configuration
-            if (Object.keys(this.expandConfig).length > 0) {
-                const expandParts: string[] = []
-                for (const [relation, fields] of Object.entries(this.expandConfig)) {
-                    if (fields && fields.length > 0) {
-                        expandParts.push(`${relation}(${fields.join(',')})`)
-                    } else {
-                        expandParts.push(relation)
-                    }
-                }
-                params.expand = expandParts.join(',')
-            } else {
-                params.expand = this.expandRelations.join(',')
-            }
+        // Auto-generate expand from fields that start with "expand."
+        const autoExpandRelations = this.extractExpandRelations()
+        
+        if (autoExpandRelations.length > 0) {
+            params.expand = autoExpandRelations.join(',')
         }
 
         if (this.sortFields.length > 0) {

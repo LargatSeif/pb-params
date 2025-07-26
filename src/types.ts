@@ -11,6 +11,37 @@ export type CollectionRecord = Record<string, any>
 // Enhanced path type that works with collection records
 type DepthCounter = [1, 2, 3, 4, 5, 6, never]
 
+// Field path type without modifiers for field selection
+export type FieldPath<T> = BaseFieldPath<T> | ExpandFieldPath<T>
+
+type BaseFieldPath<T> = {
+    [K in keyof T]: K extends string 
+      ? T[K] extends object 
+        ? K | `${K}.${BaseFieldPath<T[K]>}`
+        : K
+      : never
+}[keyof T]
+
+type ExpandFieldPath<T> = T extends { expand: infer E }
+  ? {
+      [K in keyof E]: K extends string
+        ? E[K] extends object
+          ? `expand.${K}` | `expand.${K}.${BaseFieldPath<E[K]>}` | ExpandNestedField<E[K], `expand.${K}`>
+          : `expand.${K}`
+        : never
+    }[keyof E]
+  : never
+
+type ExpandNestedField<T, Prefix extends string> = T extends { expand: infer E }
+  ? {
+      [K in keyof E]: K extends string
+        ? E[K] extends object
+          ? `${Prefix}.expand.${K}` | `${Prefix}.expand.${K}.${BaseFieldPath<E[K]>}`
+          : `${Prefix}.expand.${K}`
+        : never
+    }[keyof E]
+  : never
+
 export type Path<
     T,
     MaxDepth extends number = 6,
@@ -142,13 +173,10 @@ export interface ParamsBuilder<T extends CollectionRecord> {
     filterIf(condition: boolean, callback: FilterCallback<T>): ParamsBuilder<T>
     
     // Field selection
-    fields(fields: Path<T>[]): ParamsBuilder<T>
-    fieldsIf(condition: boolean, fields: Path<T>[]): ParamsBuilder<T>
+    fields(fields: FieldPath<T>[]): ParamsBuilder<T>
+    fieldsIf(condition: boolean, fields: FieldPath<T>[]): ParamsBuilder<T>
     
-    // Expansion
-    expand(relations: Path<T>[]): ParamsBuilder<T>
-    expand(relations: Record<Path<T>, string[]>): ParamsBuilder<T>
-    expandIf(condition: boolean, relations: Path<T>[]): ParamsBuilder<T>
+    // Note: Expansion is now auto-generated from field paths starting with "expand."
     
     // Sorting
     sort(fields: (`${Path<T>}` | `-${Path<T>}`)[]): ParamsBuilder<T>

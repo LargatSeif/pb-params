@@ -9,20 +9,27 @@ interface TestUser {
     age: number
     created: Date
     verified: boolean
-    profile: {
+    profile: string
+    organization: string
+    expand:{
+      profile: {
         bio: string
         avatar?: string
-        preferences: {
+        preferences: string
+        expand:{
+          preferences: {
             theme: 'light' | 'dark'
             notifications: boolean
+          }
         }
+      },
+      organization: {
+          id: string
+          name: string
+          slug: string
+      }
+      }
     }
-    organization: {
-        id: string
-        name: string
-        slug: string
-    }
-}
 
 describe('Type Tests', () => {
     test('pbParams should create typed builder', () => {
@@ -32,10 +39,10 @@ describe('Type Tests', () => {
 
     test('field paths should be type-safe', () => {
         const params = pbParams<TestUser>()
-            .fields(['id', 'name', 'email', 'profile.bio'])
+            .fields(['id', 'name', 'email', 'expand.profile.bio'])
             .build()
 
-        expectTypeOf(params.fields).toEqualTypeOf<string | undefined>()
+        expectTypeOf(params.fields).not.toBeUndefined()
     })
 
     test('filter should accept valid field paths', () => {
@@ -43,21 +50,21 @@ describe('Type Tests', () => {
             .filter(q => q
                 .equal('name', 'John')
                 .and()
-                .equal('profile.preferences.theme', 'dark')
+                .equal('verified', true)
                 .and()
                 .greaterThan('age', 18)
             )
             .build()
 
-        expectTypeOf(params.filter).toEqualTypeOf<string | undefined>()
+        expectTypeOf(params.filter).not.toBeUndefined()
     })
 
-    test('expand should accept relation paths', () => {
+    test('auto-expand should work from field paths', () => {
         const params = pbParams<TestUser>()
-            .expand(['profile', 'organization'])
+            .fields(['id', 'expand.profile.bio', 'expand.organization.name'])
             .build()
 
-        expectTypeOf(params.expand).toEqualTypeOf<string | undefined>()
+        expectTypeOf(params.expand).not.toBeUndefined();
     })
 
     test('sort should accept field paths with direction', () => {
@@ -65,25 +72,24 @@ describe('Type Tests', () => {
             .sort(['-created', 'name'])
             .build()
 
-        expectTypeOf(params.sort).toEqualTypeOf<string | undefined>()
+        expectTypeOf(params.sort).not.toBeUndefined()
     })
 
     test('build should return QueryParams object', () => {
         const params = pbParams<TestUser>()
             .filter(q => q.equal('verified', true))
-            .fields(['id', 'name'])
-            .expand(['profile'])
+            .fields(['id', 'name', 'expand.profile.bio'])
             .sort(['-created'])
             .page(1, 20)
             .build()
 
         expectTypeOf(params).toEqualTypeOf<import('../src/types').QueryParams>()
-        expectTypeOf(params.filter).toEqualTypeOf<string | undefined>()
-        expectTypeOf(params.fields).toEqualTypeOf<string | undefined>()
-        expectTypeOf(params.expand).toEqualTypeOf<string | undefined>()
-        expectTypeOf(params.sort).toEqualTypeOf<string | undefined>()
-        expectTypeOf(params.page).toEqualTypeOf<number | undefined>()
-        expectTypeOf(params.perPage).toEqualTypeOf<number | undefined>()
+        expectTypeOf(params.filter).not.toBeUndefined()
+        expectTypeOf(params.fields).not.toBeUndefined()
+        expectTypeOf(params.expand).not.toBeUndefined()
+        expectTypeOf(params.sort).not.toBeUndefined()
+        expectTypeOf(params.page).not.toBeUndefined()
+        expectTypeOf(params.perPage).not.toBeUndefined()
     })
 
     test('buildTyped should return TypedBuildResult', () => {

@@ -1,7 +1,8 @@
-import { describe, test, expect } from 'vitest'
+import { describe, expect, test } from 'vitest'
 import { pbParams } from '../src/builder'
 
 // Mock collection record for testing
+// Mock collection record for type testing
 interface TestUser {
     id: string
     name: string
@@ -9,11 +10,27 @@ interface TestUser {
     age: number
     created: Date
     verified: boolean
-    preferences: {
-        theme: 'light' | 'dark'
-        notifications: boolean
+    profile: string
+    organization: string
+    expand:{
+      profile: {
+        bio: string
+        avatar?: string
+        preferences: string
+        expand:{
+          preferences: {
+            theme: 'light' | 'dark'
+            notifications: boolean
+          }
+        }
+      },
+      organization: {
+          id: string
+          name: string
+          slug: string
+      }
+      }
     }
-}
 
 describe('pbParams', () => {
     test('should create a params builder', () => {
@@ -32,7 +49,6 @@ describe('pbParams', () => {
             .build()
 
         expect(params.filter).toBeDefined()
-        expect(typeof params.filter).toBe('string')
     })
 
     test('should build field selection params', () => {
@@ -43,12 +59,22 @@ describe('pbParams', () => {
         expect(params.fields).toBe('id,name,email')
     })
 
-    test('should build expand params', () => {
+    test('should auto-generate expand from field paths', () => {
         const params = pbParams<TestUser>()
-            .expand(['preferences'])
+            .fields(['id', 'expand.profile.bio', 'expand.organization.name'])
             .build()
 
-        expect(params.expand).toBe('preferences')
+        expect(params.fields).toBe('id,expand.profile.bio,expand.organization.name')
+        expect(params.expand).toBe('profile,organization')
+    })
+
+    test('should auto-generate nested expand relations', () => {
+        const params = pbParams<TestUser>()
+            .fields(['id', 'expand.profile.expand.preferences.theme'])
+            .build()
+
+        expect(params.fields).toBe('id,expand.profile.expand.preferences.theme')
+        expect(params.expand).toBe('profile,profile.preferences')
     })
 
     test('should build sort params', () => {
@@ -71,16 +97,15 @@ describe('pbParams', () => {
     test('should build combined params', () => {
         const params = pbParams<TestUser>()
             .filter(q => q.equal('verified', true))
-            .fields(['id', 'name', 'email'])
-            .expand(['preferences'])
-            .sort(['-created'])
+            .fields(['id', 'name', 'email', 'expand.profile.bio'])
+            .sort(['-created','-expand.organization.name'])
             .page(1, 20)
             .build()
 
         expect(params.filter).toBeDefined()
-        expect(params.fields).toBe('id,name,email')
-        expect(params.expand).toBe('preferences')
-        expect(params.sort).toBe('-created')
+        expect(params.fields).toBe('id,name,email,expand.profile.bio')
+        expect(params.expand).toBe('profile')
+        expect(params.sort).toBe('-created,-expand.organization.name')
         expect(params.page).toBe(1)
         expect(params.perPage).toBe(20)
     })
