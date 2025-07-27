@@ -1,5 +1,38 @@
 # Changelog
 
+## 0.3.0
+
+### Minor Changes
+
+- Add useRecord flag for RecordAuthResponse support
+
+  - Added optional `useRecord` boolean parameter to `pbParams()` function
+  - When `useRecord` is true, strips "record." prefix from field names in build output
+  - Supports type-safe access to token, meta, and record fields from auth responses
+  - Auto-expand works with both "expand._" and "record.expand._" patterns
+  - Maintains full backward compatibility
+
+## 0.2.3
+
+### Patch Changes
+
+- Fix package entry points for proper module resolution
+
+  Updated package.json to correctly map CJS and ESM builds:
+
+  - main: points to dist/index.cjs (CommonJS)
+  - module: points to dist/index.js (ESM)
+  - Added proper exports field with types/import/require conditions
+  - Fixed "Failed to resolve entry for package" error
+
+## 0.2.2
+
+### Patch Changes
+
+- Fix build consistency between CommonJS and ESM outputs
+
+  Both CJS and ESM builds now correctly implement auto-expand functionality (extracting expand relations from field paths starting with "expand.") instead of having inconsistent implementations where ESM had outdated manual expand methods.
+
 ## 0.2.1
 
 ### Patch Changes

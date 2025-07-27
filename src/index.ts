@@ -7,4 +7,5 @@ export type {
   QueryParams,
   BuildResult,
   TypedBuildResult,
+  RecordAuthResponse,
 } from './types'

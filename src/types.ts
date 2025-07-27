@@ -8,6 +8,27 @@ export type CollectionName = string
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type CollectionRecord = Record<string, any>
 
+// PocketBase auth response type
+export interface RecordAuthResponse<T = CollectionRecord> {
+    /**
+     * The signed PocketBase auth record.
+     */
+    record: T;
+    /**
+     * The PocketBase record auth token.
+     *
+     * If you are looking for the OAuth2 access and refresh tokens
+     * they are available under the `meta.accessToken` and `meta.refreshToken` props.
+     */
+    token: string;
+    /**
+     * Auth meta data usually filled when OAuth2 is used.
+     */
+    meta?: {
+        [key: string]: any;
+    };
+}
+
 // Enhanced path type that works with collection records
 type DepthCounter = [1, 2, 3, 4, 5, 6, never]
 

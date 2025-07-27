@@ -11,11 +11,12 @@ import type {
     ParamsBuilder,
     QueryParams,
     TypedBuildResult,
+    RecordAuthResponse,
 } from './types'
 
-// Create the main pbParams function
-export function pbParams<T extends CollectionRecord>(): ParamsBuilder<T> {
-    return new ParamsBuilderImpl<T>()
+// Create the main pbParams function with optional auth response handling
+export function pbParams<T extends CollectionRecord>(useRecord?: boolean): ParamsBuilder<T> {
+    return new ParamsBuilderImpl<T>(useRecord)
 }
 
 class ParamsBuilderImpl<T extends CollectionRecord> implements ParamsBuilder<T> {
@@ -25,6 +26,11 @@ class ParamsBuilderImpl<T extends CollectionRecord> implements ParamsBuilder<T> 
     private sortFields: string[] = []
     private pageNumber?: number
     private pageSizeLimit?: number
+    private useRecord: boolean
+
+    constructor(useRecord = false) {
+        this.useRecord = useRecord
+    }
 
     // Filter methods
     filter(callback: FilterCallback<T>): ParamsBuilder<T> {
@@ -76,20 +82,20 @@ class ParamsBuilderImpl<T extends CollectionRecord> implements ParamsBuilder<T> 
         return this
     }
 
-    // Extract expand relations from field paths that start with "expand."
+    // Extract expand relations from field paths
     private extractExpandRelations(): string[] {
         const expandRelations: string[] = []
         
         for (const field of this.selectedFields) {
             const fieldStr = String(field)
-            if (fieldStr.startsWith('expand.')) {
-                // Handle patterns like "expand.profile.expand.preferences.theme"
-                // Convert to "profile,profile.preferences"
-                
+            
+            // Handle both "expand.*" and "record.expand.*" patterns
+            if (fieldStr.startsWith('expand.') || fieldStr.startsWith('record.expand.')) {
                 const parts = fieldStr.split('.')
                 let currentPath = ''
+                let startIndex = fieldStr.startsWith('record.expand.') ? 2 : 1 // Skip "record.expand" or just "expand"
                 
-                for (let i = 1; i < parts.length; i++) {
+                for (let i = startIndex; i < parts.length; i++) {
                     if (parts[i] === 'expand') {
                         // Skip the expand keyword and continue building the path
                         continue
@@ -122,7 +128,19 @@ class ParamsBuilderImpl<T extends CollectionRecord> implements ParamsBuilder<T> 
         }
 
         if (this.selectedFields.length > 0) {
-            params.fields = this.selectedFields.join(',')
+            if (this.useRecord) {
+                // Transform fields: remove "record." prefix for PocketBase query
+                const transformedFields = this.selectedFields.map(field => {
+                    const fieldStr = String(field)
+                    if (fieldStr.startsWith('record.')) {
+                        return fieldStr.substring(7) // Remove "record." prefix
+                    }
+                    return fieldStr
+                })
+                params.fields = transformedFields.join(',')
+            } else {
+                params.fields = this.selectedFields.join(',')
+            }
         }
 
         // Auto-generate expand from fields that start with "expand."
