@@ -1,4 +1,4 @@
-# pb-params
+# pb-params (WIP)
 
 [![npm version](https://badge.fury.io/js/pb-params.svg)](https://badge.fury.io/js/pb-params)
 [![npm downloads](https://img.shields.io/npm/dm/pb-params.svg)](https://www.npmjs.com/package/pb-params)
